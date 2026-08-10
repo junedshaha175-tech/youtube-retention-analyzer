@@ -79,7 +79,7 @@ st.markdown("""
 
 
 
-uploaded_file=st.file_uploader("Upload your YouTube retention CSV", type="csv")
+uploaded_file=st.file_uploader("Upload your YouTube retention CSV", type=["csv","zip"])
 
 def time_to_seconds(time_str):
     time_str = str(time_str).strip()
