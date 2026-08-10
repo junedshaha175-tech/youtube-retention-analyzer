@@ -78,6 +78,24 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
+with st.expander("📖 How to Use This Tool", expanded=False):
+    st.markdown("""
+    <div style="color: #00ff41; line-height: 1.8;">
+    
+    <b>Step 1:</b> YouTube Studio → Select Video → <b>Analytics</b><br>
+    <b>Step 2:</b> Left menu mein <b>Audience Retention</b> click karo<br>
+    <b>Step 3:</b> Uppr <b>Export</b> ya <b>Download</b> button se <b>CSV</b> save karo<br>
+    <b>Step 4:</b> Woh CSV file yahan 👇 upload karo<br><br>
+    
+    <b>Milega kya?</b><br>
+    📈 Retention Graph<br>
+    🔴 Drop points (kahan viewers chhode)<br>
+    ✅ Spike points (kya accha chala)<br>
+    💡 Improvement suggestions<br>
+    
+    </div>
+    """, unsafe_allow_html=True)
+
 
 uploaded_file=st.file_uploader("Upload your YouTube retention CSV", type=["csv","zip"])
 
