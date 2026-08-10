@@ -91,6 +91,10 @@ def time_to_seconds(time_str):
 
 
 if uploaded_file is not None:
+    if not (uploaded_file.name.endswith(".csv") or uploaded_file.name.endswith(".zip")):
+        st.error("❌ Only CSV or ZIP files allowed!")
+        st.stop()
+    
     df=pd.read_csv(uploaded_file)
 
     if "Video position (%)" in df.columns:
