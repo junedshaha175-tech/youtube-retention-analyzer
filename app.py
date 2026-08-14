@@ -219,12 +219,12 @@ if uploaded_file is not None:
         elif row["drop"] < spike_threshold:
             spike_count+=1
             st.markdown(f"✅ Spike at {time} — gained {abs(int(row['drop']))}% viewers")
-             if time_pct < 15 and not spike_intro_suggested:
+            if time_pct < 15 and not spike_intro_suggested:
                 st.markdown("   💡 Suggestion: This hook works — reuse this exact pattern in your next intro")
                 spike_intro_suggested = True
-             elif not spike_late_suggested:
-                 st.markdown("   💡 Suggestion: Strong moment — highlight this in thumbnail/title or make a Shorts clip")
-                 spike_late_suggested = True
+            elif not spike_late_suggested:
+                st.markdown("   💡 Suggestion: Strong moment — highlight this in thumbnail/title or make a Shorts clip")
+                spike_late_suggested = True
            
 
 
