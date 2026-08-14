@@ -225,7 +225,7 @@ if uploaded_file is not None:
     spike_intro_suggested = False
     spike_late_suggested = False
 
-     top_n = 5
+    top_n = 5
     
     if len(all_issues) == 0:
         st.success("🎉 No issues found! Retention is solid.")
