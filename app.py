@@ -95,6 +95,23 @@ with st.expander("📖 How to Use This Tool", expanded=False):
     
     </div>
     """, unsafe_allow_html=True)
+   
+    # Tutorial Video Embed
+    st.markdown("""
+    <div style="margin-top: 15px; border: 1px solid #00ff41; border-radius: 8px; overflow: hidden;">
+        <iframe width="100%" height="220" 
+        src="https://www.youtube.com/embed/U6tJMXdyhIE" 
+        title="How to use Retention Analyzer" 
+        frameborder="0" 
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+        allowfullscreen>
+        </iframe>
+    </div>
+    <div style="text-align: center; margin-top: 8px; color: #00aa33; font-size: 0.85rem;">
+        📺 Watch: Step-by-step tutorial video
+    </div>
+    """, unsafe_allow_html=True)
+
 
 
 uploaded_file=st.file_uploader("Upload your YouTube retention CSV", type=["csv","zip"])
@@ -158,39 +175,57 @@ if uploaded_file is not None:
     drop_count=0
     spike_count=0
 
+    intro_suggested = False
+    mid_suggested = False
+    end_suggested = False
+    spike_intro_suggested = False
+    spike_late_suggested = False
+
     for _,row in df.iterrows():
         time = row["Time"]
         time_sec =time_to_seconds(row["Time"])
-        time_pct = (time_sec / total_duration) * 100
+        time_pct = (time_sec / total_duration) * 100 if total_duration > 0 else 0
+
 
         if row["drop"] > major_threshold:
             major_drop_count+=1
             st.markdown(f"🔴 MAJOR DROP at {time} — lost {int(row['drop'])}% viewers")
-            if time_sec < 10:
-                st.markdown("   💡 Suggestion: Intro bahut lamba ya boring lag raha hai. Hook pehle 5-10 seconds mein hi de do — seedha point pe aao.")
-            elif time_sec < 50:
-                st.markdown("   💡 Suggestion: Yahan content slow ho raha hoga ya repetitive lag raha hai. Isko trim karo ya beech mein koi twist/visual change daalo.")
-            else:
-                st.markdown("   💡 Suggestion: Video lambi lag rahi hai is point tak. Ya toh video ko chhota karo, ya yahan koi naya segment/CTA daal ke re-engage karo.")
+            if time_pct < 10 and not intro_suggested:
+                st.markdown("   💡 Suggestion: Intro is too weak — start with a strong hook in the first 10%")
+                intro_suggested = True
+            elif time_pct < 50 and not mid_suggested:
+                st.markdown("   💡 Suggestion: Content is slowing down — add B-roll, jump cuts, or a twist here")
+                mid_suggested = True
+            elif not end_suggested:
+                st.markdown("   💡 Suggestion: End retention is falling — shorten or add a cliffhanger/CTA earlier")
+                end_suggested = True
+           
 
 
         elif row["drop"] >minor_threshold:
             drop_count+=1
             st.markdown(f"⚠️ Drop at {time} — lost {int(row['drop'])}% viewers")
-            if time_sec < 10:
-                st.markdown("   💡 Suggestion: Intro thoda tighten karo — filler words ya slow build-up hata do.")
-            elif time_sec < 50:
-                st.markdown("   💡 Suggestion: Pacing check karo — shayad ek explanation zyada lambi ho gayi. B-roll ya jump cut try karo.")
-            else:
-                st.markdown("   💡 Suggestion: Viewer ka interest dheela ho raha hai. Beech mein koi mini-hook ya question daal ke wapas engage karo.")
+            if time_pct < 10 and not intro_suggested:
+                st.markdown("   💡 Suggestion: Intro needs tightening — remove filler words and get to the point faster")
+                intro_suggested = True
+            elif time_pct < 50 and not mid_suggested:
+                st.markdown("   💡 Suggestion: This section is dragging — trim dead air or add visual changes")
+                mid_suggested = True
+            elif not end_suggested:
+                st.markdown("   💡 Suggestion: Viewer interest fading — add a mini-hook or question to re-engage")
+                end_suggested = True
+            
 
         elif row["drop"] < spike_threshold:
             spike_count+=1
             st.markdown(f"✅ Spike at {time} — gained {abs(int(row['drop']))}% viewers")
-            if time_sec < 15:
-                st.markdown("   💡 Suggestion: Ye early moment kaam kar raha hai! Isi type ka hook agla video ke intro mein bhi use karo.")
-            else:
-                st.markdown("   💡 Suggestion: Ye moment strong hai — isko thumbnail/title mein highlight karo ya Shorts clip bana ke promote karo.")
+             if time_pct < 15 and not spike_intro_suggested:
+                st.markdown("   💡 Suggestion: This hook works — reuse this exact pattern in your next intro")
+                spike_intro_suggested = True
+            elif not spike_late_suggested:
+                st.markdown("   💡 Suggestion: Strong moment — highlight this in thumbnail/title or make a Shorts clip")
+                spike_late_suggested = True
+           
 
 
     st.divider()
@@ -209,6 +244,25 @@ if uploaded_file is not None:
         st.warning("STATUS: OPTIMIZABLE")
     else:
         st.error("STATUS: CRITICAL")
+
+
+    st.markdown("""
+    <div style="text-align:center; color:#00ff41; margin-top:30px; padding:15px; 
+         border-top:1px solid #003300; font-size:0.9rem;">
+        🚀 Built by <b>@4BVORTEX</b> | 
+        <a href="https://www.youtube.com/@4BVORTEX" target="_blank" style="color:#feca57;">
+        📺 Subscribe
+        </a>
+    </div>
+    """, unsafe_allow_html=True)
+
+else:
+    
+    pass     
+
+
+
+
            
 
 
