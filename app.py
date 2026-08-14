@@ -203,11 +203,20 @@ if uploaded_file is not None:
 
     severity_order = {"major": 0, "minor": 1, "spike": 2}
     all_issues.sort(key=lambda x: (severity_order[x["type"]], -x["drop"]))
-    
-    # Count
-    major_drop_count = sum(1 for i in all_issues if i["type"] == "major")
-    drop_count = sum(1 for i in all_issues if i["type"] == "minor")
-    spike_count = sum(1 for i in all_issues if i["type"] == "spike")
+
+
+    major_drop_count=0
+    drop_count=0
+    spike_count=0
+
+    for i in all_issues:
+        if i["type"]=="major":
+            major_drop_count+=1
+        elif i["type"]=="minor":
+            drop_count+=1
+        else:
+            spike_count+=1
+
 
     # FLAGS — ek baar suggestion, baar baar nahi
     intro_suggested = False
