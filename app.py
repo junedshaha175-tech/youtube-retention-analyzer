@@ -171,63 +171,106 @@ if uploaded_file is not None:
     st.caption(f"Major threshold: {major_threshold:.1f}% | Drop threshold: {minor_threshold:.1f}% | Spike threshold: {spike_threshold:.1f}%")
 
 
-    major_drop_count=0
-    drop_count=0
-    spike_count=0
+      
+    all_issues = []
+    for _,row in df.iterrows():
+        time = row["Time"]
+        time_sec =time_to_seconds(row["Time"])
+        time_pct = (time_sec / total_duration) * 100 if total_duration > 0 else 0
 
+        
+        if row["drop"] > major_threshold:
+            all_issues.append({
+                "type": "major",
+                "time": time,
+                "pct": time_pct,
+                "drop": int(row['drop'])
+            })
+        elif row["drop"] > minor_threshold:
+            all_issues.append({
+                "type": "minor",
+                "time": time,
+                "pct": time_pct,
+                "drop": int(row['drop'])
+            })
+        elif row["drop"] < spike_threshold:
+            all_issues.append({
+                "type": "spike",
+                "time": time,
+                "pct": time_pct,
+                "drop": abs(int(row['drop']))
+            })
+
+    severity_order = {"major": 0, "minor": 1, "spike": 2}
+    all_issues.sort(key=lambda x: (severity_order[x["type"]], -x["drop"]))
+    
+    # Count
+    major_drop_count = sum(1 for i in all_issues if i["type"] == "major")
+    drop_count = sum(1 for i in all_issues if i["type"] == "minor")
+    spike_count = sum(1 for i in all_issues if i["type"] == "spike")
+
+    # FLAGS — ek baar suggestion, baar baar nahi
     intro_suggested = False
     mid_suggested = False
     end_suggested = False
     spike_intro_suggested = False
     spike_late_suggested = False
 
-    for _,row in df.iterrows():
-        time = row["Time"]
-        time_sec =time_to_seconds(row["Time"])
-        time_pct = (time_sec / total_duration) * 100 if total_duration > 0 else 0
-
-
-        if row["drop"] > major_threshold:
-            major_drop_count+=1
-            st.markdown(f"🔴 MAJOR DROP at {time} — lost {int(row['drop'])}% viewers")
-            if time_pct < 10 and not intro_suggested:
-                st.markdown("   💡 Suggestion: Intro is too weak — start with a strong hook in the first 10%")
-                intro_suggested = True
-            elif time_pct < 50 and not mid_suggested:
-                st.markdown("   💡 Suggestion: Content is slowing down — add B-roll, jump cuts, or a twist here")
-                mid_suggested = True
-            elif not end_suggested:
-                st.markdown("   💡 Suggestion: End retention is falling — shorten or add a cliffhanger/CTA earlier")
-                end_suggested = True
-           
-
-
-        elif row["drop"] >minor_threshold:
-            drop_count+=1
-            st.markdown(f"⚠️ Drop at {time} — lost {int(row['drop'])}% viewers")
-            if time_pct < 10 and not intro_suggested:
-                st.markdown("   💡 Suggestion: Intro needs tightening — remove filler words and get to the point faster")
-                intro_suggested = True
-            elif time_pct < 50 and not mid_suggested:
-                st.markdown("   💡 Suggestion: This section is dragging — trim dead air or add visual changes")
-                mid_suggested = True
-            elif not end_suggested:
-                st.markdown("   💡 Suggestion: Viewer interest fading — add a mini-hook or question to re-engage")
-                end_suggested = True
+     top_n = 5
+    
+    if len(all_issues) == 0:
+        st.success("🎉 No issues found! Retention is solid.")
+    else:
+        st.markdown(f"**{len(all_issues)} issues found — showing top {min(top_n, len(all_issues))} critical:**")
+        
+        for issue in all_issues[:top_n]:
+            time = issue["time"]
+            time_pct = issue["pct"]
             
+            if issue["type"] == "major":
+                st.markdown(f"🔴 MAJOR DROP at {time} — lost {issue['drop']}% viewers")
+                if time_pct < 10 and not intro_suggested:
+                    st.markdown("   💡 Suggestion: Intro is too weak — start with a strong hook in the first 10%")
+                    intro_suggested = True
+                elif time_pct < 50 and not mid_suggested:
+                    st.markdown("   💡 Suggestion: Content is slowing down — add B-roll, jump cuts, or a twist here")
+                    mid_suggested = True
+                elif not end_suggested:
+                    st.markdown("   💡 Suggestion: End retention is falling — shorten or add a cliffhanger/CTA earlier")
+                    end_suggested = True
+                    
+            elif issue["type"] == "minor":
+                st.markdown(f"⚠️ Drop at {time} — lost {issue['drop']}% viewers")
+                if time_pct < 10 and not intro_suggested:
+                    st.markdown("   💡 Suggestion: Intro needs tightening — remove filler words and get to the point faster")
+                    intro_suggested = True
+                elif time_pct < 50 and not mid_suggested:
+                    st.markdown("   💡 Suggestion: This section is dragging — trim dead air or add visual changes")
+                    mid_suggested = True
+                elif not end_suggested:
+                    st.markdown("   💡 Suggestion: Viewer interest fading — add a mini-hook or question to re-engage")
+                    end_suggested = True
+                    
+            else:
+                st.markdown(f"✅ Spike at {time} — gained {issue['drop']}% viewers")
+                if time_pct < 15 and not spike_intro_suggested:
+                    st.markdown("   💡 Suggestion: This hook works — reuse this exact pattern in your next intro")
+                    spike_intro_suggested = True
+                elif not spike_late_suggested:
+                    st.markdown("   💡 Suggestion: Strong moment — highlight this in thumbnail/title or make a Shorts clip")
+                    spike_late_suggested = True
 
-        elif row["drop"] < spike_threshold:
-            spike_count+=1
-            st.markdown(f"✅ Spike at {time} — gained {abs(int(row['drop']))}% viewers")
-            if time_pct < 15 and not spike_intro_suggested:
-                st.markdown("   💡 Suggestion: This hook works — reuse this exact pattern in your next intro")
-                spike_intro_suggested = True
-            elif not spike_late_suggested:
-                st.markdown("   💡 Suggestion: Strong moment — highlight this in thumbnail/title or make a Shorts clip")
-                spike_late_suggested = True
-           
-
-
+        remaining = len(all_issues) - top_n
+        if remaining > 0:
+            with st.expander(f"📉 View remaining {remaining} issues", expanded=False):
+                for issue in all_issues[top_n:]:
+                    if issue["type"] == "major":
+                        st.markdown(f"🔴 MAJOR DROP at {issue['time']} — lost {issue['drop']}% viewers")
+                    elif issue["type"] == "minor":
+                        st.markdown(f"⚠️ Drop at {issue['time']} — lost {issue['drop']}% viewers")
+                    else:
+                        st.markdown(f"✅ Spike at {issue['time']} — gained {issue['drop']}% viewers")
+        
     st.divider()
     st.subheader("📈 Summary")
 
