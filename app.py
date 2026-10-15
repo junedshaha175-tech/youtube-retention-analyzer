@@ -1,5 +1,13 @@
+import random
+
 import streamlit as st
 import pandas as pd
+
+from thumbnail import (
+    MAX_TITLE_CHARS, STYLES, font_ok, load_image as load_thumb_image,
+    make_thumbnail, to_jpeg_bytes, to_png_bytes,
+)
+
 st.title("YOUTUBE RETENTION TOOL")
 
 
@@ -112,6 +120,74 @@ with st.expander("📖 How to Use This Tool", expanded=False):
     </div>
     """, unsafe_allow_html=True)
 
+
+
+# ========== AUTO THUMBNAIL MAKER ==========
+with st.expander("🎨 Auto Thumbnail Maker (NEW)", expanded=False):
+    st.caption("Title likho, styles chuno — 1280x720 thumbnails ready. Free, no signup.")
+
+    thumb_title = st.text_input(
+        "Thumbnail title", max_chars=MAX_TITLE_CHARS, key="thumb_title",
+        placeholder="I survived 100 days in Minecraft",
+    )
+    tcol1, tcol2 = st.columns(2)
+    thumb_highlight = tcol1.text_input(
+        "Highlight word(s) — optional", key="thumb_highlight",
+        help="Leave empty and the tool auto-highlights a number or the last word.",
+    )
+    thumb_badge = tcol2.text_input("Corner badge — optional", max_chars=14, key="thumb_badge",
+                                   placeholder="EP 12")
+
+    bcol1, bcol2 = st.columns(2)
+    thumb_bg_file = bcol1.file_uploader("Background image — optional (game screenshot)",
+                                        type=["png", "jpg", "jpeg", "webp"], key="thumb_bg")
+    thumb_fg_file = bcol2.file_uploader("Face / character — optional (transparent PNG looks best)",
+                                        type=["png", "jpg", "jpeg", "webp"], key="thumb_fg")
+
+    thumb_styles = st.multiselect("Styles", list(STYLES.keys()), default=list(STYLES.keys()),
+                                  key="thumb_styles")
+    thumb_border = st.checkbox("Colored border", value=True, key="thumb_border")
+
+    if thumb_title.strip() and not font_ok(thumb_title):
+        st.warning("Hindi font not found on this system — Hindi letters may show as boxes. "
+                   "English titles work fine.")
+
+    if st.button("✨ Generate thumbnails", key="thumb_generate"):
+        if not thumb_title.strip():
+            st.error("❌ Pehle title likho.")
+        elif not thumb_styles:
+            st.error("❌ Kam se kam ek style chuno.")
+        else:
+            try:
+                bg_img = load_thumb_image(thumb_bg_file) if thumb_bg_file else None
+                fg_img = load_thumb_image(thumb_fg_file) if thumb_fg_file else None
+                seed = random.randint(0, 10_000)
+                results = {}
+                with st.spinner("Making thumbnails..."):
+                    for style_name in thumb_styles:
+                        img = make_thumbnail(
+                            thumb_title, style_name, highlight=thumb_highlight,
+                            badge=thumb_badge, bg_image=bg_img, fg_image=fg_img,
+                            seed=seed, border=thumb_border,
+                        )
+                        results[style_name] = (to_png_bytes(img), to_jpeg_bytes(img))
+                st.session_state["thumb_results"] = results
+            except Exception:
+                st.error("❌ Could not read one of the images. Try a different PNG/JPG file.")
+
+    thumb_results = st.session_state.get("thumb_results")
+    if thumb_results:
+        rcols = st.columns(2)
+        for i, (style_name, (png_bytes, jpg_bytes)) in enumerate(thumb_results.items()):
+            with rcols[i % 2]:
+                st.image(png_bytes, caption=style_name, width="stretch")
+                dcol1, dcol2 = st.columns(2)
+                slug = style_name.lower().replace(" ", "_")
+                dcol1.download_button("⬇ PNG", png_bytes, file_name=f"thumbnail_{slug}.png",
+                                      mime="image/png", key=f"dl_png_{slug}")
+                dcol2.download_button("⬇ JPG (<2MB)", jpg_bytes, file_name=f"thumbnail_{slug}.jpg",
+                                      mime="image/jpeg", key=f"dl_jpg_{slug}")
+        st.caption("Tip: click Generate again for a fresh background pattern.")
 
 
 uploaded_file=st.file_uploader("Upload your YouTube retention CSV", type=["csv","zip"])
