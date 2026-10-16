@@ -3,6 +3,7 @@ import random
 import streamlit as st
 import pandas as pd
 
+from assist import MOODS, build_bg_prompt, quality_notes
 from thumbnail import (
     LAYOUTS, MAX_TITLE_CHARS, STYLES, font_ok, load_image as load_thumb_image,
     make_thumbnail, to_jpeg_bytes, to_png_bytes,
@@ -147,6 +148,18 @@ with st.expander("🎨 Auto Thumbnail Maker (NEW)", expanded=False):
     st.caption(LAYOUT_HELP[thumb_layout])
     is_versus = thumb_layout == "Versus"
 
+    if st.checkbox("🪄 Pro AI background chahiye? Prompt banao (ChatGPT / Gemini ke liye)", key="thumb_prompt_on"):
+        pcol1, pcol2 = st.columns(2)
+        prompt_game = pcol1.text_input("Game", value="Minecraft", key="thumb_prompt_game")
+        prompt_mood = pcol2.selectbox("Mood / colors", list(MOODS.keys()), key="thumb_prompt_mood")
+        prompt_idea = st.text_input("Scene idea (English me, short)", key="thumb_prompt_idea",
+                                    placeholder="a huge titan walking towards a medieval castle")
+        st.code(build_bg_prompt(prompt_idea, prompt_mood, prompt_game, thumb_layout,
+                                st.session_state.get("thumb_side", "Right")), language=None)
+        st.caption("1) Upar wala prompt copy karo  2) ChatGPT ya Gemini me paste karke image banao (16:9)  "
+                   "3) Image download karke niche 'Background image' me upload karo. "
+                   "Text aur character yeh tool crisp tareeke se khud lagayega.")
+
     bcol1, bcol2 = st.columns(2)
     thumb_bg_file = bcol1.file_uploader("Background image — optional (game screenshot)",
                                         type=["png", "jpg", "jpeg", "webp"], key="thumb_bg")
@@ -160,8 +173,10 @@ with st.expander("🎨 Auto Thumbnail Maker (NEW)", expanded=False):
         if not (thumb_fg_file and thumb_fg2_file):
             st.info("Versus layout ke liye dono characters upload karo — warna normal layout banega.")
 
-    st.caption("💡 Best result: background = game screenshot, "
+    st.caption("💡 Best result: background = HD game screenshot ya AI image (1920x1080), "
                "character = transparent PNG (remove.bg ya Canva 'Background Remover').")
+    for note in quality_notes(thumb_bg_file, thumb_fg_file):
+        st.warning(note)
 
     scol1, scol2 = st.columns(2)
     thumb_side = "Right"
