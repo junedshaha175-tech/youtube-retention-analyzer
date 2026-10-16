@@ -4,7 +4,7 @@ import streamlit as st
 import pandas as pd
 
 from thumbnail import (
-    MAX_TITLE_CHARS, STYLES, font_ok, load_image as load_thumb_image,
+    LAYOUTS, MAX_TITLE_CHARS, STYLES, font_ok, load_image as load_thumb_image,
     make_thumbnail, to_jpeg_bytes, to_png_bytes,
 )
 
@@ -138,15 +138,45 @@ with st.expander("🎨 Auto Thumbnail Maker (NEW)", expanded=False):
     thumb_badge = tcol2.text_input("Corner badge — optional", max_chars=14, key="thumb_badge",
                                    placeholder="EP 12")
 
+    LAYOUT_HELP = {
+        "Big headline": "Bada title ek side, character doosri side.",
+        "Small label": "Pro gaming look: chhota label (1-3 words) top me, character bada. Best for face + game.",
+        "Versus": "Do characters aamne-saamne (NOOB vs PRO, Me vs Friend). Title me 'vs' likho.",
+    }
+    thumb_layout = st.radio("Layout", list(LAYOUTS), index=1, horizontal=True, key="thumb_layout")
+    st.caption(LAYOUT_HELP[thumb_layout])
+    is_versus = thumb_layout == "Versus"
+
     bcol1, bcol2 = st.columns(2)
     thumb_bg_file = bcol1.file_uploader("Background image — optional (game screenshot)",
                                         type=["png", "jpg", "jpeg", "webp"], key="thumb_bg")
-    thumb_fg_file = bcol2.file_uploader("Face / character — optional (transparent PNG looks best)",
-                                        type=["png", "jpg", "jpeg", "webp"], key="thumb_fg")
+    thumb_fg_file = bcol2.file_uploader(
+        "Character 1 (left)" if is_versus else "Face / character — optional (transparent PNG looks best)",
+        type=["png", "jpg", "jpeg", "webp"], key="thumb_fg")
+    thumb_fg2_file = None
+    if is_versus:
+        thumb_fg2_file = st.file_uploader("Character 2 (right) — transparent PNG",
+                                          type=["png", "jpg", "jpeg", "webp"], key="thumb_fg2")
+        if not (thumb_fg_file and thumb_fg2_file):
+            st.info("Versus layout ke liye dono characters upload karo — warna normal layout banega.")
+
+    st.caption("💡 Best result: background = game screenshot, "
+               "character = transparent PNG (remove.bg ya Canva 'Background Remover').")
+
+    scol1, scol2 = st.columns(2)
+    thumb_side = "Right"
+    if not is_versus:
+        thumb_side = scol1.radio("Character position", ["Right", "Left"], horizontal=True,
+                                 key="thumb_side")
+    thumb_blur = scol2.checkbox("Blur background (pro look)", value=True, key="thumb_blur")
 
     thumb_styles = st.multiselect("Styles", list(STYLES.keys()), default=list(STYLES.keys()),
                                   key="thumb_styles")
-    thumb_border = st.checkbox("Colored border", value=True, key="thumb_border")
+    thumb_border = st.checkbox("Colored border", value=False, key="thumb_border")
+
+    max_words = {"Big headline": 6, "Small label": 4, "Versus": 4}[thumb_layout]
+    if len(thumb_title.split()) > max_words:
+        st.info(f"Title thoda lamba hai — is layout me {max_words} words tak sabse achha dikhta hai.")
 
     if thumb_title.strip() and not font_ok(thumb_title):
         st.warning("Hindi font not found on this system — Hindi letters may show as boxes. "
@@ -161,6 +191,7 @@ with st.expander("🎨 Auto Thumbnail Maker (NEW)", expanded=False):
             try:
                 bg_img = load_thumb_image(thumb_bg_file) if thumb_bg_file else None
                 fg_img = load_thumb_image(thumb_fg_file) if thumb_fg_file else None
+                fg_img2 = load_thumb_image(thumb_fg2_file) if thumb_fg2_file else None
                 seed = random.randint(0, 10_000)
                 results = {}
                 with st.spinner("Making thumbnails..."):
@@ -169,6 +200,8 @@ with st.expander("🎨 Auto Thumbnail Maker (NEW)", expanded=False):
                             thumb_title, style_name, highlight=thumb_highlight,
                             badge=thumb_badge, bg_image=bg_img, fg_image=fg_img,
                             seed=seed, border=thumb_border,
+                            side=thumb_side.lower(), blur_bg=thumb_blur,
+                            layout=thumb_layout, fg_image2=fg_img2,
                         )
                         results[style_name] = (to_png_bytes(img), to_jpeg_bytes(img))
                 st.session_state["thumb_results"] = results
